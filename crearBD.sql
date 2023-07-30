@@ -140,7 +140,6 @@ CREATE TABLE public.resultado (
                 id_resultado INTEGER NOT NULL DEFAULT nextval('public.resultado_id_resultado_seq_1'),
                 id_partido INTEGER NOT NULL,
                 id_equipo_ganador INTEGER NOT NULL,
-                empate BOOLEAN DEFAULT FALSE NOT NULL,
                 CONSTRAINT id_resultado PRIMARY KEY (id_resultado, id_partido)
 );
 
@@ -365,3 +364,19 @@ REFERENCES public.estadistica (id_estadistica)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
+
+/*para reiniciar las ids*/
+ALTER SEQUENCE arbitro_id_arbitro_seq_1 RESTART WITH 1;
+ALTER SEQUENCE equipo_id_equipo_seq_1 RESTART WITH 1;
+ALTER SEQUENCE estadio_id_estadio_seq RESTART WITH 1;
+ALTER SEQUENCE fase_id_fase_seq_1 RESTART WITH 1;
+ALTER SEQUENCE grupo_id_grupo_seq_1 RESTART WITH 1;
+ALTER SEQUENCE jugador_id_jugador_seq RESTART WITH 1;
+ALTER SEQUENCE mundial_id_mundial_seq RESTART WITH 1;
+ALTER SEQUENCE pais_id_pais_seq_1_1 RESTART WITH 1;
+ALTER SEQUENCE partido_id_partido_seq RESTART WITH 1;
+ALTER SEQUENCE persona_id_persona_seq RESTART WITH 1;
+ALTER SEQUENCE estadistica_id_estadistica_seq RESTART WITH 1;
+ALTER SEQUENCE resultado_id_resultado_seq_1 RESTART WITH 1;
+ALTER SEQUENCE score_id_score_seq RESTART WITH 1;
+ALTER SEQUENCE entrenador_id_entrenador_seq_1 RESTART WITH 1;

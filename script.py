@@ -5,7 +5,7 @@ from faker import Faker
 # IMPORTANTE: asegurarse de que la informacion sea correcta
 # establecemos los parametros para conectarmos a la base de datos
 conn = psycopg2.connect(
-    host="localhost", database="mundial_prueba1", user="postgres", password="12345"
+    host="localhost", database="pruebaScript", user="postgres", password="12345"
 )
 
 fake = Faker()
@@ -238,7 +238,8 @@ for m in range(1):
                     cantidad_jugadores,
                 ),
             )
-
+            gol_local = 0
+            gol_visitante = 0
             # cada partido tiene 22 estadisticas
             for es in range(22):
                 if es < 11:
@@ -246,6 +247,7 @@ for m in range(1):
 
                 else:
                     id_jugador = ((id_visitante * 11) - 22 + es) % 40000 + 1
+
                 asistencias = fake.random_int(min=0, max=10)
                 tiempo_jugado = fake.date_time()
                 posicion = random.choice(posiciones)
@@ -255,10 +257,16 @@ for m in range(1):
                 tarjeta_roja = fake.random_int(min=0, max=1)
                 tiros = fake.random_int(min=0, max=20)
                 pases_clave = fake.random_int(min=0, max=10)
-                goles = fake.random_int(min=0, max=5)
                 atajadas = fake.random_int(min=0, max=10)
                 paradas_penales = fake.random_int(min=0, max=5)
                 recuperaciones = fake.random_int(min=0, max=10)
+                goles = fake.random_int(min=0, max=5)
+
+                # se suman en las variables para luego determinar el ganador
+                if es < 11:
+                    gol_local += goles
+                else:
+                    gol_visitante += goles
 
                 cursor.execute(
                     "INSERT INTO estadistica (id_partido, id_jugador, asistencias, tiempo_jugado, posicion, goles, faltas, perdida_posesion, tarjeta_amarilla, tarjeta_roja, tiros, pases_clave, atajadas, paradas_penales, recuperaciones) \
@@ -281,6 +289,28 @@ for m in range(1):
                         recuperaciones,
                     ),
                 )
+            # cuando se generaron las 22 estadisticas se define el ganador y se carga en la tabla resultado
+            if gol_local < gol_visitante:
+                print("gana visitante")
+                cursor.execute(
+                    "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
+                    (
+                        p + 1 + (6 * g) + (m * 64),
+                        id_visitante,
+                    ),
+                )
+            elif gol_local > gol_visitante:
+                print("gana local")
+                cursor.execute(
+                    "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
+                    (
+                        p + 1 + (6 * g) + (m * 64),
+                        id_local,
+                    ),
+                )
+            # si sale empate no se inserta nada en la tabla resultado y es null en la tabla
+            else:
+                print("empate:partido grupo ", p + 1 + (6 * g) + (m * 64))
 
     # cada mundial tiene 16 partidos que no son de grupo
     for otros_part in range(16):
@@ -324,6 +354,10 @@ for m in range(1):
                 cantidad_jugadores,
             ),
         )
+        gol_local = 0
+        gol_visitante = 0
+        penal_local = 0
+        penal_visitante = 0
 
         # por cada partido se deben cargar 22 estadísticas
         for est in range(22):
@@ -348,6 +382,14 @@ for m in range(1):
 
             penal_desempate = fake.random_int(min=0, max=2)
 
+            # se suman en las variables para luego determinar el ganador
+            if es < 11:
+                gol_local += goles
+                penal_local += penal_desempate
+            else:
+                gol_visitante += goles
+                penal_visitante += penal_desempate
+
             cursor.execute(
                 "INSERT INTO estadistica (id_partido, id_jugador, asistencias, tiempo_jugado, posicion, goles, faltas, perdida_posesion, tarjeta_amarilla, tarjeta_roja, tiros, pases_clave, atajadas, paradas_penales, penal_desempate, recuperaciones) \
             VALUES (%s, %s,%s, %s,%s, %s,%s, %s,%s, %s,%s, %s,%s, %s,%s, %s)",
@@ -370,6 +412,46 @@ for m in range(1):
                     recuperaciones,
                 ),
             )
+        # cuando se generaron las 22 estadisticas se define el ganador y se carga en la tabla resultado
+        if gol_local < gol_visitante:
+            print("gana visitante")
+            cursor.execute(
+                "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
+                (
+                    p + 1 + (6 * g) + (m * 64),
+                    id_visitante,
+                ),
+            )
+        elif gol_local > gol_visitante:
+            print("gana local")
+            cursor.execute(
+                "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
+                (
+                    p + 1 + (6 * g) + (m * 64),
+                    id_local,
+                ),
+            )
+        # si es empate se define por penales
+        else:
+            if penal_local < penal_visitante:
+                print("gana visitante")
+                cursor.execute(
+                    "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
+                    (
+                        p + 1 + (6 * g) + (m * 64),
+                        id_visitante,
+                    ),
+                )
+            else:
+                print("gana local")
+                cursor.execute(
+                    "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
+                    (
+                        p + 1 + (6 * g) + (m * 64),
+                        id_local,
+                    ),
+                )
+
 # se cierra la conexión a la base de datos
 conn.commit()
 conn.close()
