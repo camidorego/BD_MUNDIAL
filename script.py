@@ -5,7 +5,7 @@ from faker import Faker
 # IMPORTANTE: asegurarse de que la informacion sea correcta
 # establecemos los parametros para conectarmos a la base de datos
 conn = psycopg2.connect(
-    host="localhost", database="pruebaScript", user="postgres", password="12345"
+    host="localhost", database="tp_mundial", user="postgres", password="12345"
 )
 
 fake = Faker()
@@ -322,7 +322,6 @@ for m in range(1):
         id_visitante = fake.random_int(min=1, max=(32 + (8 * 4 * m)))
 
         while id_visitante == id_local:
-            print("sigo aca -> ", id_visitante)
             id_visitante = fake.random_int(min=1, max=(32 + (8 * 4 * m)))
 
         # 8 partidos de fase octavos
@@ -418,7 +417,7 @@ for m in range(1):
             cursor.execute(
                 "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
                 (
-                    p + 1 + (6 * g) + (m * 64),
+                    otros_part + 1 + (m * 64) + 48,
                     id_visitante,
                 ),
             )
@@ -427,7 +426,7 @@ for m in range(1):
             cursor.execute(
                 "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
                 (
-                    p + 1 + (6 * g) + (m * 64),
+                    otros_part + 1 + (m * 64) + 48,
                     id_local,
                 ),
             )
@@ -438,7 +437,7 @@ for m in range(1):
                 cursor.execute(
                     "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
                     (
-                        p + 1 + (6 * g) + (m * 64),
+                        otros_part + 1 + (m * 64) + 48,
                         id_visitante,
                     ),
                 )
@@ -447,7 +446,7 @@ for m in range(1):
                 cursor.execute(
                     "INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (%s, %s)",
                     (
-                        p + 1 + (6 * g) + (m * 64),
+                        otros_part + 1 + (m * 64) + 48,
                         id_local,
                     ),
                 )
