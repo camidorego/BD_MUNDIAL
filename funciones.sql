@@ -152,89 +152,91 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- FUNCION QUE CALCULA EL EQUIPO GANADOR DE UN PARTIDO A PARTIR DE LAS ESTADISTICAS DE LOS JUGADORES
-CREATE FUNCTION calcular_ganador()
+-- FUNCION QUE CALCULA EL SCORE DE UN JUGADOR EN UN PARTIDO ESPECIFICO
+CREATE OR REPLACE FUNCTION calcular_puntaje()
 RETURNS VOID AS $$
 DECLARE
-	total_estadisticas integer;
-	id_equipo_local integer;
-	id_equipo_visitante integer;
-	partido_a record;
-	goles_local integer;
-	goles_visitante integer;
-	total_jugadores integer;
-	-- caso empate
-	penales_local integer;
-	penales_visitante integer;
-	contador integer := 0;
-BEGIN
-	FOR partido_a IN (SELECT DISTINCT id_partido FROM estadistica) LOOP
-		-- se guardan id_visitante y id_local del registro cargado
-		SELECT id_local, id_visitante INTO id_equipo_local, id_equipo_visitante
-		FROM partido WHERE id_partido = partido_a.id_partido;
+    contador INT := 1;
+    puntaje_final INT;
+    goles_var INT;
+    asistencias_var INT;
+    tarjeta_amarilla_var INT;
+    tarjeta_roja_var INT;
+    perdida_posesion_var INT;
+    pases_clave_var INT;
+    tiros_var INT;
+    tiempo_jugado_var INT;
+    posicion_var VARCHAR;
+    faltas_var INT;
+    atajadas_var INT;
+   	cant_estadistica INT;
+begin
+	SELECT count(*)
+    INTO cant_estadistica
+   	FROM estadistica;
+    WHILE contador <= cant_estadistica LOOP
+        -- Obtener los valores de la estadÃ­stica utilizando el ID actual
+        SELECT goles, asistencias, tarjeta_amarilla, tarjeta_roja, perdida_posesion, pases_clave, tiros, posicion, faltas, atajadas
+    	INTO goles_var, asistencias_var, tarjeta_amarilla_var, tarjeta_roja_var, perdida_posesion_var, pases_clave_var, tiros_var, posicion_var, faltas_var, atajadas_var
+        FROM estadistica
+        WHERE id_estadistica = contador;
 
-		-- se guarda la cantidad de jugadores que participaron en el partido
-		SELECT cantidad_jugadores INTO total_jugadores
-		FROM partido WHERE id_partido = partido_a.id_partido;
+        -- Calcular el puntaje final
+        puntaje_final := CASE
+            WHEN goles_var >= 3 THEN 30
+            WHEN goles_var = 2 THEN 20
+            WHEN goles_var = 1 THEN 10
+            ELSE 0
+        END;
+        puntaje_final := puntaje_final + CASE
+            WHEN asistencias_var >= 3 THEN 15
+            WHEN asistencias_var = 2 THEN 10
+            WHEN asistencias_var = 1 THEN 5
+            ELSE 0
+        END;
+        puntaje_final := puntaje_final + CASE
+            WHEN tarjeta_amarilla_var = 1 THEN -5
+            WHEN tarjeta_amarilla_var = 2 OR tarjeta_roja_var = 1 THEN -20
+            ELSE 0
+        END;
+        puntaje_final := puntaje_final + CASE
+            WHEN perdida_posesion_var > 10 AND perdida_posesion_var < 16 THEN -5
+            WHEN perdida_posesion_var > 15 THEN -10
+            ELSE 0
+        END;
+        puntaje_final := puntaje_final + CASE   
+            WHEN pases_clave_var > 3 AND tiros_var > 5 THEN 10
+            WHEN pases_clave_var > 3 OR tiros_var > 5 THEN 5
+            ELSE 0
+        END;
 
-		-- se cuentan todas las filas de estadisticas que sean del partido actual
-		SELECT count(*) INTO total_estadisticas
-		FROM estadistica WHERE id_partido = partido_a.id_partido;
+        IF puntaje_final >= 45 THEN
+            puntaje_final := 10;
+        ELSIF puntaje_final >= 40 AND puntaje_final < 45 THEN
+            puntaje_final := 9;
+        ELSIF puntaje_final >= 35 AND puntaje_final < 40 THEN
+            puntaje_final := 8;
+        ELSIF puntaje_final >= 30 AND puntaje_final < 35 THEN
+            puntaje_final := 7;
+        ELSIF puntaje_final >= 25 AND puntaje_final < 30 THEN
+            puntaje_final := 6;
+        ELSIF puntaje_final >= 20 AND puntaje_final < 25 THEN
+            puntaje_final := 5;
+        ELSIF puntaje_final >= 10 AND puntaje_final < 20 THEN
+            puntaje_final := 4;
+        ELSE
+            puntaje_final := 3;
+        END IF;
 
-		-- se verifica que las estadisticas de todos los jugadores fueron cargadas
-		IF total_estadisticas = total_jugadores THEN
+        -- Insertar el puntaje en la tabla nueva
+        INSERT INTO score (id_estadistica, puntaje)
+        VALUES (contador, puntaje_final);
 
-			-- se suman los goles del equipo visitante
-			SELECT SUM(goles), SUM(penal_desempate) INTO goles_visitante, penales_visitante
-			FROM estadistica WHERE id_partido = partido_a.id_partido AND id_jugador IN (
-				SELECT id_jugador FROM jugador_x_equipo WHERE id_equipo = id_equipo_visitante
-			);
-
-			-- se suman los goles del equipo local
-			SELECT SUM(goles), SUM(penal_desempate) INTO goles_local, penales_local
-			FROM estadistica WHERE id_partido = partido_a.id_partido AND id_jugador IN (
-				SELECT id_jugador FROM jugador_x_equipo WHERE id_equipo = id_equipo_local
-			);
-
-			-- se determina quien es el ganador del partido o si hay un empate y se guarda en la tabla Resultado
-			IF NOT EXISTS (SELECT 1 FROM resultado WHERE id_partido = partido_a.id_partido) THEN
-				contador := contador + 1;
-				IF goles_local > goles_visitante THEN
-					INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (partido_a.id_partido, id_equipo_local);
-					RAISE NOTICE 'Gana local %', contador;
-
-				ELSIF goles_local < goles_visitante THEN
-					INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (partido_a.id_partido, id_equipo_visitante);
-					RAISE NOTICE 'Gana visitante %', contador;
-
-				ELSE
-					RAISE NOTICE 'El partido salió empate (Todavía no definimos bien qué hacer en este caso)';
-
-					-- Si penal_desempate no es NULL quiere decir que no es partido de grupo y no puede haber empate
-					IF penales_local IS NOT NULL AND penales_visitante IS NOT NULL THEN
-						-- se determina el ganador del partido y se carga en la tabla resultado
-						IF penales_local > penales_visitante THEN
-							INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (partido_a.id_partido, id_equipo_local);
-								RAISE NOTICE 'Gana local por penales %', contador;
-						ELSIF penales_local < penales_visitante THEN
-							INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (partido_a.id_partido, id_equipo_visitante);
-							RAISE NOTICE 'Gana visitante por penales %', contador;
-						ELSE
-							-- un partido que no es de grupo NO puede haber empate
-							RAISE EXCEPTION 'Error: No puede haber empate. Asegúrate de haber cargado correctamente los datos';
-						END IF;
-					ELSE
-						-- si penal_desempate es NULL quiere decir que es un partido de grupo
-						RAISE NOTICE 'Partido empate %', contador;
-						-- si sale empate no se inserta nada en la tabla resultado
-						--INSERT INTO resultado (id_partido, id_equipo_ganador) VALUES (partido_a.id_partido, id_equipo_local);
-					END IF;
-				END IF;
-			END IF;
-		END IF;
-	END LOOP;
+        contador := contador + 1;
+    END LOOP;
 END;
-$$ LANGUAGE plpgsql;
+$$
+LANGUAGE plpgsql;
 
 -- FUNCION QUE CALCULA EL SCORE DE UN JUGADOR EN UN PARTIDO ESPECIFICO
 CREATE OR REPLACE FUNCTION calcular_puntaje()
