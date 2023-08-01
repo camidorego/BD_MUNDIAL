@@ -1,12 +1,3 @@
--- INDICES
-CREATE INDEX idx_estadistica_id_partido ON estadistica (id_partido);
-CREATE INDEX idx_estadistica_penal_desempate ON estadistica (penal_desempate);
-CREATE INDEX idx_estadistica_id_jugador ON estadistica (id_jugador);
-CREATE INDEX idx_resultado_id_partido ON resultado (id_partido);
-CREATE INDEX idx_jugadorxequipo_id_equipo ON jugador_x_equipo(id_equipo);
-CREATE INDEX idx_partido_id_mundial ON partido(id_mundial);
-CREATE INDEX idx_partido_id_fase ON public.partido (id_fase);
-
 
 
 -- TRIGGER QUE LIMITA LA CANTIDAD DE JUGADORES POR EQUIPO

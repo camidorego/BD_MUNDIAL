@@ -164,8 +164,8 @@ for i in range(50000):
         cursor.execute("INSERT INTO arbitro (id_persona) VALUES (%s)", (id_persona,))
 
 cantidad_jugadores = 22
-# se cargan 150 mundiales
-for m in range(1):
+# se cargan 3600 mundiales
+for m in range(3600):
     id_pais = fake.random_int(min=1, max=80)
     anho = 1900 + m
 

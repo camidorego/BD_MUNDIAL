@@ -380,3 +380,16 @@ ALTER SEQUENCE estadistica_id_estadistica_seq RESTART WITH 1;
 ALTER SEQUENCE resultado_id_resultado_seq_1 RESTART WITH 1;
 ALTER SEQUENCE score_id_score_seq RESTART WITH 1;
 ALTER SEQUENCE entrenador_id_entrenador_seq_1 RESTART WITH 1;
+
+-- INDICES
+CREATE INDEX idx_estadistica_id_partido ON estadistica (id_partido);
+CREATE INDEX idx_estadistica_penal_desempate ON estadistica (penal_desempate);
+CREATE INDEX idx_estadistica_id_jugador ON estadistica (id_jugador);
+CREATE INDEX idx_resultado_id_partido ON resultado (id_partido);
+CREATE INDEX idx_jugadorxequipo_id_equipo ON jugador_x_equipo(id_equipo);
+CREATE INDEX idx_partido_id_mundial ON partido(id_mundial);
+CREATE INDEX idx_partido_id_fase ON public.partido (id_fase);
+CREATE INDEX idx_jugador_id_persona ON jugador (id_persona);
+CREATE INDEX idx_persona_nombre_persona ON persona (nombre_persona);
+CREATE INDEX idx_equipo_id_grupo ON equipo (id_grupo);
+CREATE INDEX idx_grupo_id_mundial ON grupo (id_mundial);
